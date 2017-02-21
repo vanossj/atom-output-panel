@@ -56,6 +56,25 @@ class @Panel
 
 		@terminal.open @body
 		@terminal.end = -> {}
+		
+		@terminal.on 'key', (key, ev) =>
+			console.log('this is input from the terminal, keycode: ' + ev.keyCode)
+			if !ev.altKey and !ev.altGraphKey and !ev.ctrlKey and !ev.metaKey and ev.keyCode != 13 and ev.keyCode != 8 #check for printable characters
+				@terminal.write key
+
+		@terminal.on 'paste', (data, ev) =>
+			console.log 'this is a paste from the terminal'
+			@terminal.write data
+
+		pty = require 'node-pty'
+		@ptyTerm = pty.open() if !@ptyTerm?
+		console.log("using pty: " + @ptyTerm.pty)
+
+		# @ptyTerm.slave.on 'data', (data) =>
+		# 	console.log('pty slave data: ' + data + '\n')
+		@ptyTerm.master.on 'data', (data) =>
+			console.log('pty master data: ' + data + '\n')
+			@terminal.write data
 
 		window.addEventListener 'resize', => @resize()
 		@resize()
@@ -70,9 +89,14 @@ class @Panel
 		rows = Math.floor height/rect.height
 
 		@terminal.resize cols||80, rows||8
+		@ptyTerm.resize cols||80, rows||8
 
 	destroy: ->
 		@element.remove()
+		
+		@ptyTerm?.slave.destroy()
+		@ptyTerm?.master.destroy()
+		@ptyTerm = null
 
 	getElement: ->
 		@element
