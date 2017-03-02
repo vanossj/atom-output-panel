@@ -79,6 +79,40 @@ module.exports = ProcessPanel =
 
 		return @process
 
+	open: (show, options) ->
+		@initialise()
+
+		@stop()
+		
+		# TODO: add pty stuff here
+
+		{spawn} = require 'cross-spawn'
+		@process = spawn path, args||[], options||{}
+
+		@process.stdout.setEncoding 'utf8'
+		@process.stdout.pipe @panel.terminal
+
+		@process.stderr.setEncoding 'utf8'
+		@process.stderr.pipe @panel.terminal
+
+		# @process.stdin.setEncoding 'utf-8'
+		# @panel.terminal.on 'data', (data) =>
+		# 	@process.stdin.write data
+
+		if(show==true)
+			@show()
+
+		else if(show=='auto')
+			firstOutput = =>
+				@process.stdout.removeListener 'data', firstOutput
+				@process.stderr.removeListener 'data', firstOutput
+				@show()
+
+			@process.stdout.on 'data', firstOutput
+			@process.stderr.on 'data', firstOutput
+
+		return @process
+
 	stop: ->
 		if @process!=null
 			@process.kill()
