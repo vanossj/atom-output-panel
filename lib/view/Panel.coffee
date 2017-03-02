@@ -1,4 +1,5 @@
 {Emitter} = require 'atom'
+pty = require 'node-pty'
 
 class @Panel
 	constructor: ->
@@ -66,7 +67,6 @@ class @Panel
 			console.log 'this is a paste from the terminal'
 			@terminal.write data
 
-		pty = require 'node-pty'
 		@ptyTerm = pty.open() if !@ptyTerm?
 		console.log("using pty: " + @ptyTerm.pty)
 
@@ -83,13 +83,19 @@ class @Panel
 		if !height
 			height = @terminal.element.clientHeight
 
-		rect = @terminal.viewport.charMeasureElement.getBoundingClientRect()
+		rect =
+			width: @terminal.viewport.charMeasure.width
+			height: @terminal.viewport.charMeasure.height
 
-		cols = Math.floor @terminal.element.clientWidth/rect.width
-		rows = Math.floor height/rect.height
+		if rect.width? and rect.height? and rect.width > 0 and rect.height > 0
+			cols = Math.floor @terminal.element.clientWidth/rect.width
+			rows = Math.floor height/rect.height
+		else
+			cols = 80
+			rows = 8
 
-		@terminal.resize cols||80, rows||8
-		@ptyTerm.resize cols||80, rows||8
+		@terminal.resize cols, rows
+		@ptyTerm.resize cols, rows
 
 	destroy: ->
 		@element.remove()
