@@ -1,4 +1,5 @@
 {CompositeDisposable} = require 'atom'
+pty = require 'node-pty'
 
 module.exports = ProcessPanel =
 	process: null
@@ -83,44 +84,39 @@ module.exports = ProcessPanel =
 		@initialise()
 
 		@stop()
-		
-		# TODO: add pty stuff here
 
-		{spawn} = require 'cross-spawn'
-		@process = spawn path, args||[], options||{}
+		@ptyTerm = pty.open() if !@ptyTerm?
+		console.log("using pty: " + @ptyTerm.pty)
 
-		@process.stdout.setEncoding 'utf8'
-		@process.stdout.pipe @panel.terminal
-
-		@process.stderr.setEncoding 'utf8'
-		@process.stderr.pipe @panel.terminal
-
-		# @process.stdin.setEncoding 'utf-8'
-		# @panel.terminal.on 'data', (data) =>
-		# 	@process.stdin.write data
+		@ptyTerm.master.on 'data', (data) =>
+			console.log('pty master out data: ' + data + '\n')
+			@terminal.write( "ptyTerm says: " + data)
 
 		if(show==true)
 			@show()
 
 		else if(show=='auto')
 			firstOutput = =>
-				@process.stdout.removeListener 'data', firstOutput
-				@process.stderr.removeListener 'data', firstOutput
+				@ptyTerm.master.removeListener 'data', firstOutput
 				@show()
 
-			@process.stdout.on 'data', firstOutput
-			@process.stderr.on 'data', firstOutput
+			@ptyTerm.master.on 'data', firstOutput
 
-		return @process
+		return @ptyTerm.pty
 
 	stop: ->
 		if @process!=null
 			@process.kill()
 			@process = null
 
+		@ptyTerm?.slave.destroy()
+		@ptyTerm?.master.destroy()
+		@ptyTerm = null
+
 	provideOutputPanel: ->
 		isVisible: => return @atomPanel?.isVisible()||false
 		run: @run.bind this
+		open: @open.bind this
 		stop: @stop.bind this
 		show: @show.bind this
 		hide: @hide.bind this

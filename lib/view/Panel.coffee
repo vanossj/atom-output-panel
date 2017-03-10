@@ -67,19 +67,20 @@ class @Panel
 			console.log 'this is a paste from the terminal'
 			@terminal.write data
 
-		@ptyTerm = pty.open() if !@ptyTerm?
-		console.log("using pty: " + @ptyTerm.pty)
-
-		# @ptyTerm.slave.on 'data', (data) =>
-		# 	console.log('pty slave data: ' + data + '\n')
-		@ptyTerm.master.on 'data', (data) =>
-			console.log('pty master data: ' + data + '\n')
-			@terminal.write data
+		# @ptyTerm = pty.open() if !@ptyTerm?
+		# console.log("using pty: " + @ptyTerm.pty)
+		# 
+		# # @ptyTerm.slave.on 'data', (data) =>
+		# # 	console.log('pty slave data: ' + data + '\n')
+		# @ptyTerm.master.on 'data', (data) =>
+		# 	console.log('pty master data: ' + data + '\n')
+		# 	@terminal.write data
 
 		window.addEventListener 'resize', => @resize()
 		@resize()
 
 	resize: (height) ->
+		console.log "resizing"
 		if !height
 			height = @terminal.element.clientHeight
 
@@ -95,14 +96,14 @@ class @Panel
 			rows = 8
 
 		@terminal.resize cols, rows
-		@ptyTerm.resize cols, rows
+		# @ptyTerm.resize cols, rows
 
 	destroy: ->
 		@element.remove()
 		
-		@ptyTerm?.slave.destroy()
-		@ptyTerm?.master.destroy()
-		@ptyTerm = null
+		# @ptyTerm?.slave.destroy()
+		# @ptyTerm?.master.destroy()
+		# @ptyTerm = null
 
 	getElement: ->
 		@element
